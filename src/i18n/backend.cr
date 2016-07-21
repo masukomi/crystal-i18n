@@ -2,7 +2,7 @@ module I18n
   module Backend
     abstract class Base
       # lookup for the key and return the value
-      abstract def lookup(locale : String, key : String)
+      abstract def lookup(locale : String, key : String) : String | Hash(String, String)
 
       # available locales
       abstract def available_locales

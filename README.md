@@ -38,6 +38,28 @@ i18n.time(Time.now)
 i18n.date(Time.now, format: "long")
 ```
 
+## Data Structure
+Your translation files must represent a Hash, with string keys. Values must be
+of type `String | Hash(String, String | Hash)`
+
+### Reserved Keys
+#### Number Formats
+Number formats must be stored as a `Hash(String, String)` under the top level
+key `__formats__.number`
+
+#### Currency Formats
+Currency formats must be stored as a `Hash(String, String)` under the top level
+key `__formats__.currency`
+
+
+#### Date Formats
+Date formats must be stored as a `Hash(String, String)` under the top level
+key `__formats__.date`
+
+#### Time Formats
+Time formats must be stored as a `Hash(String, String)` under the top level
+key `__formats__.time`
+
 ## Contributing
 
 1. Fork it ( https://github.com/[your-github-name]/i18n/fork )

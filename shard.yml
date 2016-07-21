@@ -2,11 +2,11 @@ name: i18n
 version: 0.1.2
 
 dependencies:
-  config:
-    github: whity/crystal-config
-    branch: master
+  baked_file_system:
+    github: schovi/baked_file_system
 
 authors:
   - André Brás <andregoncalo.bras@gmail.com>
+  - Masukomi <masukomi@masukomi.org>
 
 license: MIT

@@ -26,64 +26,58 @@ module I18n
       return self
     end
 
-    def translate(key, locale : String = @default_locale, count : Int = 0)
-      result = @_backend.lookup(locale, key)
-      if (!result)
-        return key
+    def translate(key    : String,
+                  locale : String = @default_locale,
+                  count  : Int = nil) : String
+      value = @_backend.lookup(locale, key)
+
+      # default to the key if nothing was found
+      return key if !value  
+
+      if (!value.is_a?(Hash))
+        return value
       end
 
-      if (!result.is_a?(Hash))
-        return result
-      end
-
-      result = result as Hash
-
-      # ##if result is a 'hash' and we passed 'count', check for the right message to return
-      if (count <= 0)
-        return result.fetch("other", nil)
-      end
-
-      # all keys 'number' or 'number..number' are a range, get the first that 'count' matches
-      msg = result.delete("other")
-      keys = result.keys.map { |item| item.to_s }.sort
-      keys.each do |key|
-        value = result[key]
-        match = key.match(/^\d+$/)
-        if (match && count == key.to_i)
-          msg = value
+      # choices, choices...
+      value = value as Hash(String, String)
+      return translate_hash(key, locale, count, value)
+    end
+    
+    protected def translate_counted_item(data : Hash(String, String), 
+                                         key : String, 
+                                         count : Int) : String
+      msg = nil as String?
+      data.keys.each do |key|
+        if (key_equals_count?(key, count))
+          msg = data[key]
           break
         end
+        
 
-        # if not a range, continue to the next one
-        match = key.match(/^(\d+)..(\d+)?$/i)
-        if (!match)
-          next
-        end
-        match = match as Regex::MatchData
-
-        # if end isn't defined, just check if count is bigger or equal than start
-        range_end = match[2]?
-        if (!range_end)
-          if (count >= match[1].to_i)
-            msg = value
+        key_range = key_to_rangeish(key)
+        if key_range.size > 0
+          if count_in_rangeish(count, key_range)
+            msg = data[key]
             break
           end
-
+        else
           next
         end
-
-        range = Range.new(match[1].to_i, match[2].to_i)
-        if (range.includes?(count))
-          msg = value
-          break
-        end
       end
-
+      
       if (msg.is_a?(String))
         return sprintf(msg, count)
       end
+      # else, it's nil. Default to the key
+      return key
+    end
 
-      return
+    protected def translate_hash(key : String, 
+                                 locale : String, 
+                                 count : Int,
+                                 data : Hash)
+
+      return translate_counted_item(data, key, count)
     end
 
     def date(value, locale : String = @default_locale, format : String = "default")
@@ -167,6 +161,46 @@ module I18n
       end
 
       return value
+    end
+
+    protected def key_equals_count?(key : String,
+                                     count : Int) : Bool
+      int_key = int_key_or_nil
+      if ( count == int_key_or_nil )
+        return true
+      end
+      return false
+    end
+
+    protected def count_in_rangeish(count : Int, range : Array[Int]) : Bool
+      low = range[0]
+      if count < low
+        return false
+      end
+      if range.size > 1 && count > range[1]
+        return false
+      end
+      return true
+    end
+    protected def key_to_range(key : String) : Array[Int]
+      response = [] of Array[Int]
+      match = key.match(/^(\d+)..(\d+)?$/i)
+      if ! match
+        return [] of Array[Int]
+      end
+      match = match as Regex::MatchData
+      response.push(match[1])
+      if match[2]
+        response.push(match[2])
+      end
+      return response
+    end
+
+    protected def int_key_or_nil(key : String) : Int?
+      if key.match(/^\d+$/)
+        return key.to_i
+      end
+      return nil
     end
 
     protected def _date_time(value : Time, locale : String, formats : Hash,
